@@ -2179,6 +2179,26 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 } else {
                     actionBar.setTitle(LocaleController.getStringNew("AppName", R.string.AppName));
                 }
+                if (MessagesController.getTelegraherSettings(currentAccount).getBoolean("EnablePressTitleToOpenAllTab", true)) {
+                    actionBar.setOnLongClickListener(v -> {
+                        boolean vib = false;
+                        if(MessagesController.getTelegraherSettings(currentAccount).getBoolean("EnableHideAllTab", false) && filterTabsViewIsVisible){
+                            vib = true;
+                            if (!filterTabsView.showAllChatsTab){
+                                filterTabsView.toggleAllTabs(true);
+                                filterTabsView.selectFirstTab();
+                            } else{
+                                filterTabsView.toggleAllTabs(false);
+                                scrollToFilterTab(0);
+                            }
+                        } else if (filterTabsView.getCurrentTabId() != filterTabsView.getFirstTabId() && filterTabsViewIsVisible){
+                            vib = true;
+                            filterTabsView.selectFirstTab();
+                        }
+                        if (vib) actionBar.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                        return false;
+                    });
+                }
             }
             if (folderId == 0) {
                 actionBar.setSupportsHolidayImage(true);
@@ -4119,6 +4139,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         }
         ArrayList<MessagesController.DialogFilter> filters = getMessagesController().dialogFilters;
         SharedPreferences preferences = MessagesController.getMainSettings(currentAccount);
+        SharedPreferences localPreps = MessagesController.getTelegraherSettings(currentAccount);
         if (!filters.isEmpty()) {
             if (force || filterTabsView.getVisibility() != View.VISIBLE) {
                 boolean animatedUpdateItems = animated;
@@ -4132,12 +4153,13 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     filterTabsView.resetTabId();
                 }
                 filterTabsView.removeTabs();
-                filterTabsView.addTab(Integer.MAX_VALUE, 0, LocaleController.getString("FilterAllChats", R.string.FilterAllChats));
+                if (!MessagesController.getTelegraherSettings(currentAccount).getBoolean("EnableHideAllTab", false))
+                    filterTabsView.addTab(Integer.MAX_VALUE, 0, LocaleController.getString("FilterAllChats", R.string.FilterAllChats));
                 for (int a = 0, N = filters.size(); a < N; a++) {
                     filterTabsView.addTab(a, filters.get(a).localId, filters.get(a).name);
                 }
                 id = filterTabsView.getCurrentTabId();
-                boolean updateCurrentTab = false;
+                boolean updateCurrentTab = MessagesController.getTelegraherSettings(currentAccount).getBoolean("EnableHideAllTab", false);
                 if (id >= 0) {
                     if (viewPages[0].selectedType != id) {
                         updateCurrentTab = true;
@@ -4146,7 +4168,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 }
                 for (int a = 0; a < viewPages.length; a++) {
                     if (viewPages[a].selectedType != Integer.MAX_VALUE && viewPages[a].selectedType >= filters.size()) {
-                        viewPages[a].selectedType = filters.size() - 1;
+                        viewPages[a].selectedType = filters.size();
                     }
                     viewPages[a].listView.setScrollingTouchSlop(RecyclerView.TOUCH_SLOP_PAGING);
                 }
@@ -4416,9 +4438,17 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 hideActionMode(true);
             }
             return false;
-        } else if (filterTabsView != null && filterTabsView.getVisibility() == View.VISIBLE && !tabsAnimationInProgress && !filterTabsView.isAnimatingIndicator() && filterTabsView.getCurrentTabId() != Integer.MAX_VALUE && !startedTracking) {
-            filterTabsView.selectFirstTab();
-            return false;
+        } else if (filterTabsView != null && filterTabsView.getVisibility() == View.VISIBLE && !tabsAnimationInProgress && !filterTabsView.isAnimatingIndicator()
+                && filterTabsView.getCurrentTabId() != Integer.MAX_VALUE && !startedTracking) {
+            if(!MessagesController.getTelegraherSettings(currentAccount).getBoolean("EnableHideAllTab", false)){
+                filterTabsView.selectFirstTab();
+                return false;
+            }
+//            if(!MessagesController.getTelegraherSettings(currentAccount).getBoolean("EnablePressTitleToOpenAllTab", true)){
+//                //filterTabsView.toggleAllTabs(true);
+//                filterTabsView.selectFirstTab();
+//                return false;
+//            }
         } else if (commentView != null && commentView.isPopupShowing()) {
             commentView.hidePopup(true);
             return false;

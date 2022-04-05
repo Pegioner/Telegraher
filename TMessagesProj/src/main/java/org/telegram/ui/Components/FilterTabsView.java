@@ -15,6 +15,7 @@ import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.RectF;
@@ -42,6 +43,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.LinearSmoothScroller;
 import androidx.recyclerview.widget.RecyclerView;
 
+import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.Emoji;
 import org.telegram.messenger.LocaleController;
@@ -973,6 +975,10 @@ public class FilterTabsView extends FrameLayout {
             delegate.onPageSelected(id, scrollingForward);
         }
         scrollToChild(position);
+        if (MessagesController.getTelegraherSettings(UserConfig.selectedAccount).getBoolean("EnableHideAllTab", false) && showAllChatsTab && id != Integer.MAX_VALUE)
+            toggleAllTabs(false);
+        if (!MessagesController.getTelegraherSettings(UserConfig.selectedAccount).getBoolean("EnableHideAllTab", false) && !showAllChatsTab && id != Integer.MAX_VALUE)
+            toggleAllTabs(true);
     }
 
     public void selectFirstTab() {
@@ -1199,9 +1205,9 @@ public class FilterTabsView extends FrameLayout {
         if (!tabs.isEmpty()) {
             int width = MeasureSpec.getSize(widthMeasureSpec) - AndroidUtilities.dp(7) - AndroidUtilities.dp(7);
             Tab firstTab = tabs.get(0);
-            firstTab.setTitle(LocaleController.getString("FilterAllChats", R.string.FilterAllChats));
             int tabWith = firstTab.getWidth(false);
-            firstTab.setTitle(allTabsWidth > width ? LocaleController.getString("FilterAllChatsShort", R.string.FilterAllChatsShort) : LocaleController.getString("FilterAllChats", R.string.FilterAllChats));
+            if (showAllChatsTab)
+                firstTab.setTitle(allTabsWidth > width ? LocaleController.getString("FilterAllChatsShort", R.string.FilterAllChatsShort) : LocaleController.getString("FilterAllChats", R.string.FilterAllChats));
             int trueTabsWidth = allTabsWidth - tabWith;
             trueTabsWidth += firstTab.getWidth(false);
             int prevWidth = additionalTabWidth;
@@ -1239,7 +1245,6 @@ public class FilterTabsView extends FrameLayout {
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
         super.onLayout(changed, l, t, r, b);
-
         if (prevLayoutWidth != r - l) {
             prevLayoutWidth = r - l;
             scrollingToChild = -1;
@@ -1283,6 +1288,10 @@ public class FilterTabsView extends FrameLayout {
             currentPosition = position;
             selectedTabId = id;
         }
+        if (MessagesController.getTelegraherSettings(UserConfig.selectedAccount).getBoolean("EnableHideAllTab", false) && showAllChatsTab)
+            toggleAllTabs(false);
+        if (!MessagesController.getTelegraherSettings(UserConfig.selectedAccount).getBoolean("EnableHideAllTab", false) && !showAllChatsTab)
+            toggleAllTabs(true);
     }
 
     private int getChildWidth(TextView child) {
@@ -1352,7 +1361,8 @@ public class FilterTabsView extends FrameLayout {
                 invalidated = true;
                 requestLayout();
                 allTabsWidth = 0;
-                tabs.get(0).setTitle(LocaleController.getString("FilterAllChats", R.string.FilterAllChats));
+                if (showAllChatsTab)
+                    tabs.get(0).setTitle(LocaleController.getString("FilterAllChats", R.string.FilterAllChats));
                 for (int b = 0; b < N; b++) {
                     allTabsWidth += tabs.get(b).getWidth(true) + AndroidUtilities.dp(32);
                 }
@@ -1383,7 +1393,8 @@ public class FilterTabsView extends FrameLayout {
             listView.setItemAnimator(itemAnimator);
             adapter.notifyDataSetChanged();
             allTabsWidth = 0;
-            tabs.get(0).setTitle(LocaleController.getString("FilterAllChats", R.string.FilterAllChats));
+            if (showAllChatsTab)
+                tabs.get(0).setTitle(LocaleController.getString("FilterAllChats", R.string.FilterAllChats));
             for (int b = 0, N = tabs.size(); b < N; b++) {
                 allTabsWidth += tabs.get(b).getWidth(true) + AndroidUtilities.dp(32);
             }
@@ -1433,6 +1444,11 @@ public class FilterTabsView extends FrameLayout {
             int idx1 = fromIndex - 1;
             int idx2 = toIndex - 1;
             int count = tabs.size() - 1;
+            if (!showAllChatsTab) {
+                idx1++;
+                idx2++;
+                count++;
+            }
             if (idx1 < 0 || idx2 < 0 || idx1 >= count || idx2 >= count) {
                 return;
             }
@@ -1495,7 +1511,7 @@ public class FilterTabsView extends FrameLayout {
 
         @Override
         public int getMovementFlags(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder) {
-            if (!isEditing || viewHolder.getAdapterPosition() == 0) {
+            if (!isEditing || (showAllChatsTab && viewHolder.getAdapterPosition() == 0) && !MessagesController.getTelegraherSettings(UserConfig.selectedAccount).getBoolean("EnablePressTitleToOpenAllTab", true)) {
                 return makeMovementFlags(0, 0);
             }
             return makeMovementFlags(ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT, 0);
@@ -1503,7 +1519,7 @@ public class FilterTabsView extends FrameLayout {
 
         @Override
         public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder source, RecyclerView.ViewHolder target) {
-            if (source.getAdapterPosition() == 0 || target.getAdapterPosition() == 0) {
+            if (showAllChatsTab && (source.getAdapterPosition() == 0 || target.getAdapterPosition() == 0)) {
                 return false;
             }
             adapter.swapElements(source.getAdapterPosition(), target.getAdapterPosition());
@@ -1535,5 +1551,23 @@ public class FilterTabsView extends FrameLayout {
 
     public RecyclerListView getListView() {
         return listView;
+    }
+
+    public boolean showAllChatsTab = !MessagesController.getTelegraherSettings(UserConfig.selectedAccount).getBoolean("EnableHideAllTab", false);
+
+    public void toggleAllTabs(boolean show) {
+        if (show == showAllChatsTab)
+            return;
+        showAllChatsTab = show;
+        removeTabs();
+        if (showAllChatsTab)
+            addTab(Integer.MAX_VALUE, 0, LocaleController.getString("FilterAllChats", R.string.FilterAllChats));
+        ArrayList<MessagesController.DialogFilter> filters = AccountInstance.getInstance(UserConfig.selectedAccount).getMessagesController().dialogFilters;
+        for (int a = 0, N = filters.size(); a < N; a++) {
+            MessagesController.DialogFilter dialogFilter = filters.get(a);
+            addTab(a, filters.get(a).localId, dialogFilter.name);
+        }
+        finishAddingTabs(true);
+        measure(getMeasuredWidth(),getMeasuredHeight());
     }
 }
