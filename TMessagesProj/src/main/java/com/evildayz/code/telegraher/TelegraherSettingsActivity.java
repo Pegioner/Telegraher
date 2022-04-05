@@ -84,6 +84,7 @@ public class TelegraherSettingsActivity extends BaseFragment implements Notifica
     private int chatLabelRow;
     private int chatDeleteMarkRow;
     private int chatSBFullRow;
+    private int chatSwipeToNextRow;
 
     private int folderLabelRow;
     private int folderHideAllTabRow;
@@ -126,6 +127,7 @@ public class TelegraherSettingsActivity extends BaseFragment implements Notifica
         chatLabelRow = rowCount++;
         chatDeleteMarkRow = rowCount++;
         chatSBFullRow = rowCount++;
+        chatSwipeToNextRow = rowCount++;
 
         folderLabelRow = rowCount++;
         folderHideAllTabRow = rowCount++;
@@ -239,6 +241,18 @@ public class TelegraherSettingsActivity extends BaseFragment implements Notifica
                 enabled = preferences.getBoolean("EnableChatDeleteMark", true);
                 editor.putBoolean("EnableChatDeleteMark", !enabled);
                 editor.commit();
+            } else if (position == chatSBFullRow) {
+                SharedPreferences preferences = MessagesController.getTelegraherSettings(currentAccount);
+                SharedPreferences.Editor editor = preferences.edit();
+                enabled = preferences.getBoolean("EnableChatSBFull", false);
+                editor.putBoolean("EnableChatSBFull", !enabled);
+                editor.commit();
+            } else if (position == chatSwipeToNextRow) {
+                SharedPreferences preferences = MessagesController.getTelegraherSettings(currentAccount);
+                SharedPreferences.Editor editor = preferences.edit();
+                enabled = preferences.getBoolean("EnableSwipeToNext", false);
+                editor.putBoolean("EnableSwipeToNext", !enabled);
+                editor.commit();
             } else if (position == folderHideAllTabRow) {
                 SharedPreferences preferences = MessagesController.getTelegraherSettings(currentAccount);
                 SharedPreferences.Editor editor = preferences.edit();
@@ -251,23 +265,11 @@ public class TelegraherSettingsActivity extends BaseFragment implements Notifica
                 enabled = preferences.getBoolean("EnablePressTitleToOpenAllTab", true);
                 editor.putBoolean("EnablePressTitleToOpenAllTab", !enabled);
                 editor.commit();
-            } else if (position == chatSBFullRow) {
-                SharedPreferences preferences = MessagesController.getTelegraherSettings(currentAccount);
-                SharedPreferences.Editor editor = preferences.edit();
-                enabled = preferences.getBoolean("EnableChatSBFull", false);
-                editor.putBoolean("EnableChatSBFull", !enabled);
-                editor.commit();
             } else if (position == accountExtendVanillaRow) {
                 SharedPreferences preferences = MessagesController.getGlobalTelegraherSettings();
                 SharedPreferences.Editor editor = preferences.edit();
                 enabled = preferences.getBoolean("EnableAccountExtendVanilla", false);
                 editor.putBoolean("EnableAccountExtendVanilla", !enabled);
-                editor.commit();
-            } else if (position == showTelegraherMenuRow) {
-                SharedPreferences preferences = MessagesController.getGlobalTelegraherSettings();
-                SharedPreferences.Editor editor = preferences.edit();
-                enabled = preferences.getBoolean("ShowTelegraherMenu", false);
-                editor.putBoolean("ShowTelegraherMenu", !enabled);
                 editor.commit();
             } else if (position == killMeLabelRow) {
                 killThatApp();
@@ -420,16 +422,16 @@ public class TelegraherSettingsActivity extends BaseFragment implements Notifica
                         checkCell.setTextAndCheck("Show Shadowban", localPreps.getBoolean("EnableProfileSB", true), true);
                     } else if (position == chatDeleteMarkRow) {
                         checkCell.setTextAndCheck(String.format("Show `%s` mark", LocaleController.getString("DeletedMessage", R.string.DeletedMessage)), localPreps.getBoolean("EnableChatDeleteMark", true), true);
+                    } else if (position == chatSBFullRow) {
+                        checkCell.setTextAndCheck("Full ShadowBan \uD83D\uDE48", localPreps.getBoolean("EnableChatSBFull", false), true);
+                    } else if (position == chatSwipeToNextRow) {
+                        checkCell.setTextAndCheck("Disable swipe to next channel", localPreps.getBoolean("EnableSwipeToNext", false), true);
                     } else if (position == folderHideAllTabRow) {
                         checkCell.setTextAndCheck("Hide \"All Chats\" tab", localPreps.getBoolean("EnableHideAllTab", false), true);
                     } else if (position == folderPressTitleToOpenAllTabRow) {
                         checkCell.setTextAndCheck("Press title to open \"All Chats\" tab", localPreps.getBoolean("EnablePressTitleToOpenAllTab", true), true);
                     } else if (position == accountExtendVanillaRow) {
                         checkCell.setTextAndCheck("* 3+", globalPreps.getBoolean("EnableAccountExtendVanilla", false), true);
-                    } else if (position == chatSBFullRow) {
-                        checkCell.setTextAndCheck("Full ShadowBan \uD83D\uDE48", localPreps.getBoolean("EnableChatSBFull", false), true);
-                    } else if (position == showTelegraherMenuRow) {
-                        checkCell.setTextAndCheck("* Show Telegraher menu", globalPreps.getBoolean("ShowTelegraherMenu", false), true);
                     }
                     break;
                 }
@@ -544,8 +546,9 @@ public class TelegraherSettingsActivity extends BaseFragment implements Notifica
             } else if (
                     position == voiceHDRow || position == voiceBadmanRow || position == voipHDRow
                             || position == profileUIDRow || position == profileDCIDRow || position == profileSBRow
-                            || position == chatDeleteMarkRow || position == folderHideAllTabRow || position == folderPressTitleToOpenAllTabRow
-                            || position == accountExtendVanillaRow || position == chatSBFullRow
+                            || position == chatDeleteMarkRow || position == chatSBFullRow || position == chatSwipeToNextRow
+                            || position == folderHideAllTabRow || position == folderPressTitleToOpenAllTabRow
+                            || position == accountExtendVanillaRow
             ) {
                 return 1;
             } else if (position == killMeLabelRow) {

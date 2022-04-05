@@ -4328,7 +4328,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 if (e.getAction() == MotionEvent.ACTION_DOWN) {
                     scrollByTouch = true;
                 }
-                if (pullingDownOffset != 0 && (e.getAction() == MotionEvent.ACTION_UP || e.getAction() == MotionEvent.ACTION_CANCEL)) {
+                if (!MessagesController.getTelegraherSettings(currentAccount).getBoolean("EnableSwipeToNext", false) && pullingDownOffset != 0 && (e.getAction() == MotionEvent.ACTION_UP || e.getAction() == MotionEvent.ACTION_CANCEL)) {
                     float progress = Math.min(1f, pullingDownOffset / AndroidUtilities.dp(110));
                     if (e.getAction() == MotionEvent.ACTION_UP && progress == 1 && pullingDownDrawable != null && !pullingDownDrawable.emptyStub) {
                         if (pullingDownDrawable.animationIsRunning()) {
@@ -4467,7 +4467,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     drawReplyButton(c);
                 }
 
-                if (pullingDownOffset != 0) {
+                if (!MessagesController.getTelegraherSettings(currentAccount).getBoolean("EnableSwipeToNext", false) && pullingDownOffset != 0) {
                     c.save();
                     float transitionOffset = 0;
                     if (pullingDownAnimateProgress != 0) {
@@ -4500,7 +4500,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 drawLaterRoundProgressCell = null;
 
                 canvas.save();
-                if (fragmentTransition == null || (fromPullingDownTransition && !toPullingDownTransition)) {
+                if (!MessagesController.getTelegraherSettings(currentAccount).getBoolean("EnableSwipeToNext", false) && (fragmentTransition == null || (fromPullingDownTransition && !toPullingDownTransition))) {
                     canvas.clipRect(0, chatListViewPaddingTop - chatListViewPaddingVisibleOffset - AndroidUtilities.dp(4), getMeasuredWidth(), getMeasuredHeight() - blurredViewBottomOffset);
                 }
                 selectorRect.setEmpty();
@@ -5494,7 +5494,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
             @Override
             public int scrollVerticallyBy(int dy, RecyclerView.Recycler recycler, RecyclerView.State state) {
-                if (dy < 0 && pullingDownOffset != 0) {
+                if (!MessagesController.getTelegraherSettings(currentAccount).getBoolean("EnableSwipeToNext", false) && dy < 0 && pullingDownOffset != 0) {
                     pullingDownOffset += dy;
                     if (pullingDownOffset < 0) {
                         dy = (int) pullingDownOffset;
@@ -5527,7 +5527,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 if (!foundTopView) {
                     scrolled = super.scrollVerticallyBy(dy, recycler, state);
                 }
-                if (dy > 0 && scrolled == 0 && ChatObject.isChannel(currentChat) && !currentChat.megagroup && chatListView.getScrollState() == RecyclerView.SCROLL_STATE_DRAGGING && !chatListView.isFastScrollAnimationRunning() && !chatListView.isMultiselect() && reportType < 0) {
+                if (!MessagesController.getTelegraherSettings(currentAccount).getBoolean("EnableSwipeToNext", false) && dy > 0 && scrolled == 0 && ChatObject.isChannel(currentChat) && !currentChat.megagroup && chatListView.getScrollState() == RecyclerView.SCROLL_STATE_DRAGGING && !chatListView.isFastScrollAnimationRunning() && !chatListView.isMultiselect() && reportType < 0) {
                     if (pullingDownOffset == 0 && pullingDownDrawable != null) {
                         pullingDownDrawable.updateDialog();
                     }
