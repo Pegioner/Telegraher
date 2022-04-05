@@ -269,6 +269,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Stack;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -639,6 +640,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     private int startFromVideoMessageId;
     private boolean needSelectFromMessageId;
     private int returnToMessageId;
+    private final Stack<Integer> returnToMessageIdsStack = new Stack<>();
     private int returnToLoadIndex;
     private int createUnreadMessageAfterId;
     private boolean createUnreadMessageAfterIdLoading;
@@ -4328,7 +4330,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 if (e.getAction() == MotionEvent.ACTION_DOWN) {
                     scrollByTouch = true;
                 }
-                if (!MessagesController.getTelegraherSettings(currentAccount).getBoolean("EnableSwipeToNext", false) && pullingDownOffset != 0 && (e.getAction() == MotionEvent.ACTION_UP || e.getAction() == MotionEvent.ACTION_CANCEL)) {
+                if (!MessagesController.getTelegraherSettings(currentAccount).getBoolean("EnableSwipeToNext", true) && pullingDownOffset != 0 && (e.getAction() == MotionEvent.ACTION_UP || e.getAction() == MotionEvent.ACTION_CANCEL)) {
                     float progress = Math.min(1f, pullingDownOffset / AndroidUtilities.dp(110));
                     if (e.getAction() == MotionEvent.ACTION_UP && progress == 1 && pullingDownDrawable != null && !pullingDownDrawable.emptyStub) {
                         if (pullingDownDrawable.animationIsRunning()) {
@@ -4467,7 +4469,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     drawReplyButton(c);
                 }
 
-                if (!MessagesController.getTelegraherSettings(currentAccount).getBoolean("EnableSwipeToNext", false) && pullingDownOffset != 0) {
+                if (!MessagesController.getTelegraherSettings(currentAccount).getBoolean("EnableSwipeToNext", true) && pullingDownOffset != 0) {
                     c.save();
                     float transitionOffset = 0;
                     if (pullingDownAnimateProgress != 0) {
@@ -4500,7 +4502,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 drawLaterRoundProgressCell = null;
 
                 canvas.save();
-                if (!MessagesController.getTelegraherSettings(currentAccount).getBoolean("EnableSwipeToNext", false) && (fragmentTransition == null || (fromPullingDownTransition && !toPullingDownTransition))) {
+                if (!MessagesController.getTelegraherSettings(currentAccount).getBoolean("EnableSwipeToNext", true) && (fragmentTransition == null || (fromPullingDownTransition && !toPullingDownTransition))) {
                     canvas.clipRect(0, chatListViewPaddingTop - chatListViewPaddingVisibleOffset - AndroidUtilities.dp(4), getMeasuredWidth(), getMeasuredHeight() - blurredViewBottomOffset);
                 }
                 selectorRect.setEmpty();
@@ -5494,7 +5496,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
             @Override
             public int scrollVerticallyBy(int dy, RecyclerView.Recycler recycler, RecyclerView.State state) {
-                if (!MessagesController.getTelegraherSettings(currentAccount).getBoolean("EnableSwipeToNext", false) && dy < 0 && pullingDownOffset != 0) {
+                if (!MessagesController.getTelegraherSettings(currentAccount).getBoolean("EnableSwipeToNext", true) && dy < 0 && pullingDownOffset != 0) {
                     pullingDownOffset += dy;
                     if (pullingDownOffset < 0) {
                         dy = (int) pullingDownOffset;
@@ -5527,7 +5529,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 if (!foundTopView) {
                     scrolled = super.scrollVerticallyBy(dy, recycler, state);
                 }
-                if (!MessagesController.getTelegraherSettings(currentAccount).getBoolean("EnableSwipeToNext", false) && dy > 0 && scrolled == 0 && ChatObject.isChannel(currentChat) && !currentChat.megagroup && chatListView.getScrollState() == RecyclerView.SCROLL_STATE_DRAGGING && !chatListView.isFastScrollAnimationRunning() && !chatListView.isMultiselect() && reportType < 0) {
+                if (!MessagesController.getTelegraherSettings(currentAccount).getBoolean("EnableSwipeToNext", true) && dy > 0 && scrolled == 0 && ChatObject.isChannel(currentChat) && !currentChat.megagroup && chatListView.getScrollState() == RecyclerView.SCROLL_STATE_DRAGGING && !chatListView.isFastScrollAnimationRunning() && !chatListView.isMultiselect() && reportType < 0) {
                     if (pullingDownOffset == 0 && pullingDownDrawable != null) {
                         pullingDownDrawable.updateDialog();
                     }
@@ -6249,7 +6251,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             textSelectionHelper.cancelTextSelectionRunnable();
             if (createUnreadMessageAfterId != 0) {
                 scrollToMessageId(createUnreadMessageAfterId, 0, false, returnToLoadIndex, true, 0);
-            } else if (returnToMessageId > 0) {
+            } else if (returnToMessageId > 0 || (MessagesController.getTelegraherSettings(currentAccount).getBoolean("EnableAllBackMessages", true) && !returnToMessageIdsStack.empty())) {
+                if (MessagesController.getTelegraherSettings(currentAccount).getBoolean("EnableAllBackMessages", true) && !returnToMessageIdsStack.empty())
+                    returnToMessageId = returnToMessageIdsStack.pop();
                 scrollToMessageId(returnToMessageId, 0, true, returnToLoadIndex, true, 0);
             } else {
                 scrollToLastMessage(false);
@@ -6259,6 +6263,15 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 }
             }
         });
+
+        if (MessagesController.getTelegraherSettings(currentAccount).getBoolean("EnableAllBackMessages", true)) {
+            pagedownButton.setOnLongClickListener(view -> {
+                returnToMessageId = 0;
+                returnToMessageIdsStack.clear();
+                scrollToLastMessage(true);
+                return true;
+            });
+        }
 
         mentiondownButton = new FrameLayout(context);
         mentiondownButton.setVisibility(View.INVISIBLE);
@@ -12754,6 +12767,8 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             }
         }
         returnToMessageId = fromMessageId;
+        if (MessagesController.getTelegraherSettings(currentAccount).getBoolean("EnableAllBackMessages", true) && fromMessageId > 0)
+            returnToMessageIdsStack.push(returnToMessageId);
         returnToLoadIndex = loadIndex;
         needSelectFromMessageId = select;
     }
@@ -12819,6 +12834,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             }
         } else {
             returnToMessageId = 0;
+            returnToMessageIdsStack.clear();
             newUnreadMessageCount = 0;
             if (pagedownButton.getTag() != null) {
                 pagedownButton.setTag(null);
@@ -12887,6 +12903,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             }
         } else {
             returnToMessageId = 0;
+            returnToMessageIdsStack.clear();
             if (mentiondownButton.getTag() != null) {
                 mentiondownButton.setTag(null);
                 if (mentiondownButtonAnimation != null) {
