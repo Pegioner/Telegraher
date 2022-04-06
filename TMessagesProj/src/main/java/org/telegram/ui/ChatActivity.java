@@ -421,6 +421,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     private View searchAsListTogglerView;
     private ImageView searchCalendarButton;
     private ImageView searchUserButton;
+    private ImageView searchBeginningButton;
     private ImageView searchUpButton;
     private ImageView searchDownButton;
     private SearchCounterView searchCountText;
@@ -2557,6 +2558,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     if (searchUserButton != null) {
                         searchUserButton.setVisibility(View.VISIBLE);
                     }
+                    searchBeginningButton.setVisibility(View.VISIBLE);
                     if (searchingForUser) {
                         mentionsAdapter.searchUsernameOrHashtag(null, 0, null, false, true);
                         searchingForUser = false;
@@ -2679,6 +2681,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         searchItem.setSearchFieldHint(LocaleController.getString("Search", R.string.Search));
                         searchCalendarButton.setVisibility(View.VISIBLE);
                         searchUserButton.setVisibility(View.VISIBLE);
+                        searchBeginningButton.setVisibility(View.VISIBLE);
                         searchingUserMessages = null;
                         searchingChatMessages = null;
                     }
@@ -7967,12 +7970,25 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
             @Override
             protected void measureChildWithMargins(View child, int parentWidthMeasureSpec, int widthUsed, int parentHeightMeasureSpec, int heightUsed) {
+                if (child == searchBeginningButton) {
+                    int leftMargin = 0;
+                    if (searchCalendarButton != null && searchCalendarButton.getVisibility() != GONE) {
+                        leftMargin += 48;
+                    }
+                    if (searchUserButton != null && searchUserButton.getVisibility() != GONE) {
+                        leftMargin += 48;
+                    }
+                    ((MarginLayoutParams) child.getLayoutParams()).leftMargin = AndroidUtilities.dp(leftMargin);
+                }
                 if (child == searchCountText) {
                     int leftMargin = 14;
                     if (searchCalendarButton != null && searchCalendarButton.getVisibility() != GONE) {
                         leftMargin += 48;
                     }
                     if (searchUserButton != null && searchUserButton.getVisibility() != GONE) {
+                        leftMargin += 48;
+                    }
+                    if (searchBeginningButton != null && searchBeginningButton.getVisibility() != GONE) {
                         leftMargin += 48;
                     }
                     ((MarginLayoutParams) child.getLayoutParams()).leftMargin = AndroidUtilities.dp(leftMargin);
@@ -8047,6 +8063,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 mentionsAdapter.setSearchingMentions(true);
                 searchCalendarButton.setVisibility(View.GONE);
                 searchUserButton.setVisibility(View.GONE);
+                searchBeginningButton.setVisibility(View.GONE);
                 searchingForUser = true;
                 searchingUserMessages = null;
                 searchingChatMessages = null;
@@ -8078,9 +8095,21 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         });
         searchCalendarButton.setContentDescription(LocaleController.getString("JumpToDate", R.string.JumpToDate));
 
+        searchBeginningButton = new ImageView(context);
+        searchBeginningButton.setScaleType(ImageView.ScaleType.CENTER);
+        searchBeginningButton.setImageResource(R.drawable.msg_draw_arrow);
+        searchBeginningButton.setColorFilter(new PorterDuffColorFilter(getThemedColor(Theme.key_chat_searchPanelIcons), PorterDuff.Mode.MULTIPLY));
+        searchBeginningButton.setBackgroundDrawable(Theme.createSelectorDrawable(getThemedColor(Theme.key_actionBarActionModeDefaultSelector), 1));
+        searchContainer.addView(searchBeginningButton, LayoutHelper.createFrame(48, 48, Gravity.LEFT | Gravity.TOP, 0, 0, 0, 0));
+        searchBeginningButton.setOnClickListener(view -> {
+            AndroidUtilities.hideKeyboard(searchItem.getSearchField());
+            jumpToDate(1375315200);
+        });
+        searchBeginningButton.setContentDescription(LocaleController.getString("JumpToBeginning", R.string.JumpToBeginning));
+
         searchCountText = new SearchCounterView(context, themeDelegate);
         searchCountText.setGravity(Gravity.LEFT);
-        searchContainer.addView(searchCountText, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_VERTICAL, 0, 0, 108, 0));
+        searchContainer.addView(searchCountText, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_VERTICAL, 0, 0, 96, 0));
 
         bottomOverlay = new FrameLayout(context) {
             @Override
@@ -26772,6 +26801,8 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         themeDescriptions.add(new ThemeDescription(searchCalendarButton, ThemeDescription.FLAG_BACKGROUNDFILTER | ThemeDescription.FLAG_DRAWABLESELECTEDSTATE, null, null, null, null, Theme.key_actionBarActionModeDefaultSelector));
         themeDescriptions.add(new ThemeDescription(searchUserButton, ThemeDescription.FLAG_IMAGECOLOR, null, null, null, null, Theme.key_chat_searchPanelIcons));
         themeDescriptions.add(new ThemeDescription(searchUserButton, ThemeDescription.FLAG_BACKGROUNDFILTER | ThemeDescription.FLAG_DRAWABLESELECTEDSTATE, null, null, null, null, Theme.key_actionBarActionModeDefaultSelector));
+        themeDescriptions.add(new ThemeDescription(searchBeginningButton, ThemeDescription.FLAG_IMAGECOLOR, null, null, null, null, Theme.key_chat_searchPanelIcons));
+        themeDescriptions.add(new ThemeDescription(searchBeginningButton, ThemeDescription.FLAG_BACKGROUNDFILTER | ThemeDescription.FLAG_DRAWABLESELECTEDSTATE, null, null, null, null, Theme.key_actionBarActionModeDefaultSelector));
         themeDescriptions.add(new ThemeDescription(searchCountText, ThemeDescription.FLAG_TEXTCOLOR, null, null, null, null, Theme.key_chat_searchPanelText));
         themeDescriptions.add(new ThemeDescription(searchAsListTogglerView, ThemeDescription.FLAG_BACKGROUNDFILTER | ThemeDescription.FLAG_DRAWABLESELECTEDSTATE, null, null, null, null, Theme.key_actionBarActionModeDefaultSelector));
 

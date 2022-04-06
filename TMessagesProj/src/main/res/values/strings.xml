@@ -1117,6 +1117,7 @@
     <string name="ChatYourSelfDescription3">Access this chat from any device</string>
     <string name="ChatYourSelfDescription4">Use search to quickly find things</string>
     <string name="ChatYourSelfTitle">Your cloud storage</string>
+    <string name="JumpToBeginning">Jump to Beginning</string>
     <string name="JumpToDate">Jump to Date</string>
     <string name="DeleteForUser">Delete for %1$s</string>
     <string name="DeleteForAll">Delete for all members</string>
