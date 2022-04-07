@@ -2675,6 +2675,9 @@ public class MessagesStorage extends BaseController {
                         continue;
                     }
                     flags = filter.flags;
+                    if (MessagesController.getTelegraherSettings(currentAccount).getBoolean("EnableIgnoreMutedCount", false) && (flags & MessagesController.DIALOG_FILTER_FLAG_EXCLUDE_MUTED) == 0) {
+                        flags |= MessagesController.DIALOG_FILTER_FLAG_EXCLUDE_MUTED;
+                    }
                 } else {
                     filter = null;
                     flags = MessagesController.DIALOG_FILTER_FLAG_ALL_CHATS;
@@ -4846,6 +4849,9 @@ public class MessagesStorage extends BaseController {
                 }
                 unreadCount = filter.pendingUnreadCount;
                 flags = filter.flags;
+                if (MessagesController.getTelegraherSettings(currentAccount).getBoolean("EnableIgnoreMutedCount", false) && (flags & MessagesController.DIALOG_FILTER_FLAG_EXCLUDE_MUTED) == 0) {
+                    flags |= MessagesController.DIALOG_FILTER_FLAG_EXCLUDE_MUTED;
+                }
             } else {
                 filter = null;
                 flags = MessagesController.DIALOG_FILTER_FLAG_ALL_CHATS;
