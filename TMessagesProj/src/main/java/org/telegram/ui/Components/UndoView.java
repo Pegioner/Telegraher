@@ -4,7 +4,9 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
+import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
@@ -55,6 +57,7 @@ import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
+import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.PaymentFormActivity;
 
 import java.util.ArrayList;
@@ -176,6 +179,8 @@ public class UndoView extends FrameLayout {
     public final static int ACTION_CLEAR_DATES = 81;
 
     public final static int ACTION_PREVIEW_MEDIA_DESELECTED = 82;
+
+    public final static int ACTION_NEED_RESATRT = 1337;
 
     private CharSequence infoText;
     private int hideAnimationType = 1;
@@ -327,7 +332,7 @@ public class UndoView extends FrameLayout {
                 currentAction == ACTION_REPORT_SENT || currentAction == ACTION_VOIP_USER_CHANGED || currentAction == ACTION_VOIP_CAN_NOW_SPEAK || currentAction == ACTION_VOIP_RECORDING_STARTED ||
                 currentAction == ACTION_VOIP_RECORDING_FINISHED || currentAction == ACTION_VOIP_SOUND_MUTED || currentAction == ACTION_VOIP_SOUND_UNMUTED || currentAction == ACTION_PAYMENT_SUCCESS ||
                 currentAction == ACTION_VOIP_USER_JOINED || currentAction == ACTION_PIN_DIALOGS || currentAction == ACTION_UNPIN_DIALOGS || currentAction == ACTION_VOIP_VIDEO_RECORDING_STARTED ||
-                currentAction == ACTION_VOIP_VIDEO_RECORDING_FINISHED;
+                currentAction == ACTION_VOIP_VIDEO_RECORDING_FINISHED || currentAction == ACTION_NEED_RESATRT;
     }
 
     private boolean hasSubInfo() {
@@ -435,6 +440,7 @@ public class UndoView extends FrameLayout {
         showWithAction(ids, action, infoObject, infoObject2, actionRunnable, cancelRunnable);
     }
 
+    @SuppressLint("ResourceType")
     public void showWithAction(ArrayList<Long> dialogIds, int action, Object infoObject, Object infoObject2, Runnable actionRunnable, Runnable cancelRunnable) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && currentAction == ACTION_MESSAGE_COPIED || currentAction == ACTION_USERNAME_COPIED || currentAction == ACTION_HASHTAG_COPIED || currentAction == ACTION_TEXT_COPIED || currentAction == ACTION_LINK_COPIED || currentAction == ACTION_PHONE_COPIED || currentAction == ACTION_EMAIL_COPIED || currentAction == ACTION_VOIP_LINK_COPIED) {
             return;
@@ -485,7 +491,29 @@ public class UndoView extends FrameLayout {
 
         infoTextView.setMovementMethod(null);
 
-        if (isTooltipAction()) {
+        if (currentAction == ACTION_NEED_RESATRT) {
+            infoTextView.setText("Restart app to take effect");
+
+            layoutParams.leftMargin = AndroidUtilities.dp(58);
+            layoutParams.topMargin = AndroidUtilities.dp(13);
+            layoutParams.rightMargin = 0;
+
+            infoTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 15);
+            undoButton.setVisibility(VISIBLE);
+            infoTextView.setTypeface(Typeface.DEFAULT);
+            subinfoTextView.setVisibility(GONE);
+
+            leftImageView.setVisibility(VISIBLE);
+            leftImageView.setAnimation(R.raw.chats_infotip, 36, 36);
+            leftImageView.setProgress(0);
+            leftImageView.playAnimation();
+            undoImageView.setVisibility(GONE);
+
+            undoTextView.setText(LocaleController.getString("ApplyTheme", R.string.ApplyTheme));
+            currentCancelRunnable = () -> triggerRebirth(getContext(), LaunchActivity.class);
+
+
+        } else if (isTooltipAction()) {
             CharSequence infoText;
             String subInfoText;
             int icon;
@@ -1581,5 +1609,12 @@ public class UndoView extends FrameLayout {
     private int getThemedColor(String key) {
         Integer color = resourcesProvider != null ? resourcesProvider.getColor(key) : null;
         return color != null ? color : Theme.getColor(key);
+    }
+
+    public static void triggerRebirth(Context context, Class myClass) {
+        Intent intent = new Intent(context, myClass);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        context.startActivity(intent);
+        Runtime.getRuntime().exit(0);
     }
 }

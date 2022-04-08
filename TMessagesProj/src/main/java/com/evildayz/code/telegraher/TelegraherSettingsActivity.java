@@ -24,6 +24,7 @@ import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
@@ -55,6 +56,7 @@ import org.telegram.ui.Cells.TextSettingsCell;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.SlideChooseView;
+import org.telegram.ui.Components.UndoView;
 import org.telegram.ui.QrActivity;
 
 import java.util.ArrayList;
@@ -85,11 +87,11 @@ public class TelegraherSettingsActivity extends BaseFragment implements Notifica
     private int chatDeleteMarkRow;
     private int chatSBFullRow;
     private int chatSwipeToNextRow;
-    private int chatIgnoreMutedCountRow;
     private int chatAllBackMessagesRow;
 
     private int folderLabelRow;
     private int folderTabsOnForwardRow;
+    private int folderIgnoreMutedCountRow;
     private int folderHideAllTabRow;
     private int folderPressTitleToOpenAllTabRow;
 
@@ -111,6 +113,8 @@ public class TelegraherSettingsActivity extends BaseFragment implements Notifica
 
     private int rowCount = 0;
 
+    private UndoView tooltip;
+
     @Override
     public boolean onFragmentCreate() {
         showLabelTelegraherMenuRow = rowCount++;
@@ -131,11 +135,12 @@ public class TelegraherSettingsActivity extends BaseFragment implements Notifica
         chatDeleteMarkRow = rowCount++;
         chatSBFullRow = rowCount++;
         chatSwipeToNextRow = rowCount++;
-        chatIgnoreMutedCountRow = rowCount++;
+
         chatAllBackMessagesRow = rowCount++;
 
         folderLabelRow = rowCount++;
         folderTabsOnForwardRow = rowCount++;
+        folderIgnoreMutedCountRow = rowCount++;
         folderHideAllTabRow = rowCount++;
         folderPressTitleToOpenAllTabRow = rowCount++;
 
@@ -259,12 +264,6 @@ public class TelegraherSettingsActivity extends BaseFragment implements Notifica
                 enabled = preferences.getBoolean("EnableSwipeToNext", true);
                 editor.putBoolean("EnableSwipeToNext", !enabled);
                 editor.commit();
-            } else if (position == chatIgnoreMutedCountRow) {
-                SharedPreferences preferences = MessagesController.getTelegraherSettings(currentAccount);
-                SharedPreferences.Editor editor = preferences.edit();
-                enabled = preferences.getBoolean("EnableIgnoreMutedCount", false);
-                editor.putBoolean("EnableIgnoreMutedCount", !enabled);
-                editor.commit();
             } else if (position == chatAllBackMessagesRow) {
                 SharedPreferences preferences = MessagesController.getTelegraherSettings(currentAccount);
                 SharedPreferences.Editor editor = preferences.edit();
@@ -277,6 +276,13 @@ public class TelegraherSettingsActivity extends BaseFragment implements Notifica
                 enabled = preferences.getBoolean("EnableTabsOnForward", false);
                 editor.putBoolean("EnableTabsOnForward", !enabled);
                 editor.commit();
+            } else if (position == folderIgnoreMutedCountRow) {
+                SharedPreferences preferences = MessagesController.getTelegraherSettings(currentAccount);
+                SharedPreferences.Editor editor = preferences.edit();
+                enabled = preferences.getBoolean("EnableIgnoreMutedCount", false);
+                editor.putBoolean("EnableIgnoreMutedCount", !enabled);
+                editor.commit();
+                tooltip.showWithAction(0, UndoView.ACTION_NEED_RESATRT, null, null);
             } else if (position == folderHideAllTabRow) {
                 SharedPreferences preferences = MessagesController.getTelegraherSettings(currentAccount);
                 SharedPreferences.Editor editor = preferences.edit();
@@ -311,6 +317,9 @@ public class TelegraherSettingsActivity extends BaseFragment implements Notifica
             }
         });
 
+        tooltip = new UndoView(context);
+        frameLayout.addView(tooltip, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.BOTTOM | Gravity.LEFT, 8, 0, 8, 8));
+
         return fragmentView;
     }
 
@@ -342,8 +351,16 @@ public class TelegraherSettingsActivity extends BaseFragment implements Notifica
         @Override
         public boolean isEnabled(RecyclerView.ViewHolder holder) {
             int position = holder.getAdapterPosition();
-            return !(
-                    position == voiceLabelRow || position == voipLabelRow);
+            return !(position == showLabelTelegraherMenuRow
+                            || position == voiceLabelRow
+                            || position == voipLabelRow
+                            || position == profileLabelRow
+                            || position == chatLabelRow
+                            || position == folderLabelRow
+                            || position == accountLabelRow
+                            || position == videoLabelRoundBitrateRow
+                            || position == videoLabelRoundSizeRow
+                            || position == deviceSpoofingLabelRow);
         }
 
         @Override
@@ -450,12 +467,12 @@ public class TelegraherSettingsActivity extends BaseFragment implements Notifica
                         checkCell.setTextAndCheck("Full ShadowBan \uD83D\uDE48", localPreps.getBoolean("EnableChatSBFull", false), true);
                     } else if (position == chatSwipeToNextRow) {
                         checkCell.setTextAndCheck("Disable swipe to next channel", localPreps.getBoolean("EnableSwipeToNext", true), true);
-                    } else if (position == chatIgnoreMutedCountRow) {
-                        checkCell.setTextAndCheck("Ignore muted unread count in tabs", localPreps.getBoolean("EnableIgnoreMutedCount", false), true);
                     } else if (position == chatAllBackMessagesRow) {
                         checkCell.setTextAndCheck("Remember all clicked replies", localPreps.getBoolean("EnableAllBackMessages", true), true);
                     } else if (position == folderTabsOnForwardRow) {
                         checkCell.setTextAndCheck("Show tabs on forward and share", localPreps.getBoolean("EnableTabsOnForward", false), true);
+                    } else if (position == folderIgnoreMutedCountRow) {
+                        checkCell.setTextAndCheck("Ignore muted unread count in tabs", localPreps.getBoolean("EnableIgnoreMutedCount", false), true);
                     } else if (position == folderHideAllTabRow) {
                         checkCell.setTextAndCheck("Hide \"All Chats\" tab", localPreps.getBoolean("EnableHideAllTab", false), true);
                     } else if (position == folderPressTitleToOpenAllTabRow) {
@@ -562,22 +579,23 @@ public class TelegraherSettingsActivity extends BaseFragment implements Notifica
         public int getItemViewType(int position) {
             if (
                     position == showLabelTelegraherMenuRow
-                            || position == voiceLabelRow || position == voipLabelRow
+                            || position == voiceLabelRow
+                            || position == voipLabelRow
                             || position == profileLabelRow
                             || position == chatLabelRow
                             || position == folderLabelRow
                             || position == accountLabelRow
-                            || position == deviceSpoofingLabelRow
-                            || position == deviceSpoofingResetGlobalLabelRow
                             || position == videoLabelRoundBitrateRow
                             || position == videoLabelRoundSizeRow
+                            || position == deviceSpoofingLabelRow
+                            || position == deviceSpoofingResetGlobalLabelRow
             ) {
                 return 0;
             } else if (
                     position == voiceHDRow || position == voiceBadmanRow || position == voipHDRow
                             || position == profileUIDRow || position == profileDCIDRow || position == profileSBRow
-                            || position == chatDeleteMarkRow || position == chatSBFullRow || position == chatSwipeToNextRow || position == chatIgnoreMutedCountRow || position == chatAllBackMessagesRow
-                            || position == folderTabsOnForwardRow || position == folderHideAllTabRow || position == folderPressTitleToOpenAllTabRow
+                            || position == chatDeleteMarkRow || position == chatSBFullRow || position == chatSwipeToNextRow || position == chatAllBackMessagesRow
+                            || position == folderTabsOnForwardRow || position == folderIgnoreMutedCountRow || position == folderHideAllTabRow || position == folderPressTitleToOpenAllTabRow
                             || position == accountExtendVanillaRow
             ) {
                 return 1;
