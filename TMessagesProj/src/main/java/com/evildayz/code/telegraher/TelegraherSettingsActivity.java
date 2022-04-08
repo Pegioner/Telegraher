@@ -89,6 +89,7 @@ public class TelegraherSettingsActivity extends BaseFragment implements Notifica
     private int chatAllBackMessagesRow;
 
     private int folderLabelRow;
+    private int folderTabsOnForwardRow;
     private int folderHideAllTabRow;
     private int folderPressTitleToOpenAllTabRow;
 
@@ -134,6 +135,7 @@ public class TelegraherSettingsActivity extends BaseFragment implements Notifica
         chatAllBackMessagesRow = rowCount++;
 
         folderLabelRow = rowCount++;
+        folderTabsOnForwardRow = rowCount++;
         folderHideAllTabRow = rowCount++;
         folderPressTitleToOpenAllTabRow = rowCount++;
 
@@ -268,6 +270,12 @@ public class TelegraherSettingsActivity extends BaseFragment implements Notifica
                 SharedPreferences.Editor editor = preferences.edit();
                 enabled = preferences.getBoolean("EnableAllBackMessages", true);
                 editor.putBoolean("EnableAllBackMessages", !enabled);
+                editor.commit();
+            } else if (position == folderTabsOnForwardRow) {
+                SharedPreferences preferences = MessagesController.getTelegraherSettings(currentAccount);
+                SharedPreferences.Editor editor = preferences.edit();
+                enabled = preferences.getBoolean("EnableTabsOnForward", false);
+                editor.putBoolean("EnableTabsOnForward", !enabled);
                 editor.commit();
             } else if (position == folderHideAllTabRow) {
                 SharedPreferences preferences = MessagesController.getTelegraherSettings(currentAccount);
@@ -446,6 +454,8 @@ public class TelegraherSettingsActivity extends BaseFragment implements Notifica
                         checkCell.setTextAndCheck("Ignore muted unread count in tabs", localPreps.getBoolean("EnableIgnoreMutedCount", false), true);
                     } else if (position == chatAllBackMessagesRow) {
                         checkCell.setTextAndCheck("Remember all clicked replies", localPreps.getBoolean("EnableAllBackMessages", true), true);
+                    } else if (position == folderTabsOnForwardRow) {
+                        checkCell.setTextAndCheck("Show tabs on forward and share", localPreps.getBoolean("EnableTabsOnForward", false), true);
                     } else if (position == folderHideAllTabRow) {
                         checkCell.setTextAndCheck("Hide \"All Chats\" tab", localPreps.getBoolean("EnableHideAllTab", false), true);
                     } else if (position == folderPressTitleToOpenAllTabRow) {
@@ -567,7 +577,7 @@ public class TelegraherSettingsActivity extends BaseFragment implements Notifica
                     position == voiceHDRow || position == voiceBadmanRow || position == voipHDRow
                             || position == profileUIDRow || position == profileDCIDRow || position == profileSBRow
                             || position == chatDeleteMarkRow || position == chatSBFullRow || position == chatSwipeToNextRow || position == chatIgnoreMutedCountRow || position == chatAllBackMessagesRow
-                            || position == folderHideAllTabRow || position == folderPressTitleToOpenAllTabRow
+                            || position == folderTabsOnForwardRow || position == folderHideAllTabRow || position == folderPressTitleToOpenAllTabRow
                             || position == accountExtendVanillaRow
             ) {
                 return 1;
